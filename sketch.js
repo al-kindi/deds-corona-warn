@@ -31,9 +31,11 @@ const serverIDsHeight = 130;
 const CORNER_RADIUS = 8;
 
 function setup() {
-  createCanvas(WIDTH, HEIGHT);
+  var canvas = createCanvas(WIDTH, HEIGHT);
+  // Move the canvas so it’s inside our <div id="sketch-holder">.
+  canvas.parent('sketch-holder');
   
-  sim = new Simulation(N, SPEED, PERSON_SIZE, sim_size_x, sim_size_y);
+  sim = new Simulation(N, PERSON_SIZE, sim_size_x, sim_size_y);
   
   simDisplay = new SimulationDisplay(sim_offset_x, 3/5 * width - 20, sim_offset_y);
   
@@ -50,6 +52,11 @@ function setup() {
                              server_height,
                              20,
                              20);
+  
+  // Dynamically update HTML elements with JS variables
+  document.getElementById("heading").innerHTML = "Subtitle changed...";
+  document.getElementById("name").innerHTML = "Jane Doe";
+
 }
 
 function draw() {
