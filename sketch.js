@@ -10,9 +10,13 @@ const WIDTH = 600;
 const HEIGHT = 530;
 
 // Simulation parameters
-const N = 10;
-const SPEED = 3;
+const N = 6;
+const SPEED = 2;
 const PERSON_SIZE = 20;
+const PROB_TRANSITION_TO_BUSY = 0.005;
+const BUSY_DURATION = 300;
+const PROB_FOR_INITIATING_TEST = 0.0005;
+const TEST_DURATION = 500;
 
 // Global vars for boundaries of simulation
 var sim_offset_x = 10;
@@ -69,26 +73,30 @@ function draw() {
   server.draw();
 }
 
+//==================================//
+// Code for creating the simulation
+//==================================//
+
 class Simulation {
-  constructor(n, speed, size, width, height) {
+  constructor(n, size, width, height) {
     this.n = n;
-    this.speed = speed;
     this.size = size;
     this.width = width;
     this.height = height;
     
     this.persons = [];
+    
+    // Add some people
     for (let i=0; i<n; i++) {
-      this.persons.push(new Person(random() * this.width * 0.8 + sim_offset_x,
-                                   random() * this.height * 0.8 + sim_offset_y,
-                                   random()*this.speed,
-                                   random()*this.speed,
+      this.persons.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
+                                   random() * (this.height-2*sim_offset_y) + sim_offset_y,
                                    20,
-                                   "green",
+                                   "grey",
                                    i,
                                    this.width,
                                    this.height));
     }
+    
     this.persons[0].color = "lime";
     this.persons[1].color = "red";
   }
@@ -96,35 +104,79 @@ class Simulation {
   update() {
     this.persons.forEach(person => person.update());
     
-    // TODO: Collide and store IDs of collision
+    // TODO: Check if people are close to each other; if yes:
+    // - Set both to busy (talking to each other)
+    // - Create popup, indicating that IDs got exchanged
+    // - Maybe also change color (pulsating brightness?)
+    // - If "our" light green dot is involved:
+    //   display new ID under "Collected IDs"
   }
 }
 
+
 class Person {
-  constructor(posx, posy, speedx, speedy, size, color, id, simWidth, simHeight) {
+  constructor(posx, posy, size, color, id, simWidth, simHeight) {
     this.posx = posx;
     this.posy = posy;
-    this.speedx = speedx;
-    this.speedy = speedy;
+    this.speedx = (2*random()-1) * SPEED;
+    this.speedy = (2*random()-1) * SPEED;
     this.size = size;
     this.color = color;
     this.id = id;
     this.width = simWidth;
     this.height = simHeight;
+    this.state = "walking";
+    this.busyCounter = 0;
   }
   
   update() {
-    this.posx += this.speedx;
-    this.posy += this.speedy;
-    
-    if (this.posx < this.size/2 | this.posx > this.width - this.size/2) {
-      this.speedx *= -1;
+    if (this.state == "busy") {
+      this.busyCounter -= 1;
+      
+      if (this.busyCounter <= 0) {
+        this.state = "walking";
+      }
+      
+    } else if (this.state == "walking") {
+      // TODO: make walking people look a bit less like particles, e.g. by making it a random walk or rotating the velocity vector randomly by a few degrees on each update
+      this.posx += this.speedx;
+      this.posy += this.speedy;
+      this.checkWallCollision();
+      
+      if (random() < PROB_FOR_INITIATING_TEST) {
+        // TODO: Test this person for Corona
+        // - Set to busy for TEST_DURATION
+        // - Indicate test process with a popup
+        // - Indicate test result
+        // - If result is positive:
+        //   * Send ID to RKI-Server
+        //   * Set color of dot to red
+        //   * Send dot to quarantine, 
+        //     e.g. let it walk out of the boundaries
+      
+      } else if (random() < PROB_TRANSITION_TO_BUSY) {
+        this.state = "busy";
+        this.busyCounter = BUSY_DURATION + random() * BUSY_DURATION;
+      }
     }
-    if (this.posy < this.size/2 | this.posy > this.height - this.size/2) {
+  }
+  
+  checkWallCollision() {
+    if (this.posx < this.size/2 | 
+        this.posx > this.width - this.size/2) {
+      this.speedx *= -1;
+      }
+    if (this.posy < this.size/2 | 
+        this.posy > this.height - this.size/2) {
       this.speedy *= -1;
     }
   }
 }
+
+
+//=================================//
+// Code for drawing the simulation
+//=================================//
 
 class Element {
   constructor(offset_x, offset_y, size_x, size_y) {
@@ -197,6 +249,7 @@ class SimulationDisplay extends TextElement {
     
     stroke("black");
     
+    // Draw circles for people
     sim.persons.forEach(person => {
       fill(person.color);
       circle(person.posx, person.posy, person.size);
@@ -245,7 +298,7 @@ class WarnAppDisplay extends TextBlockList {
                                        collectedIDsHeight, 
                                        "Collected IDs", 
                                        "aaaa-aaaaa\nbbbb-bbbb\ncccc-cccc",
-                                       "orange")
+                                       "lightgrey")
     
     this.elements = [ownID, collectedIDs];
   }
