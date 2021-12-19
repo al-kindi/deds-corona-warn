@@ -12,11 +12,13 @@ const HEIGHT = 530;
 // Simulation parameters
 const N = 6;
 const SPEED = 2;
+const MAX_SPEED =  3;
 const PERSON_SIZE = 20;
 const PROB_TRANSITION_TO_BUSY = 0.005;
 const BUSY_DURATION = 300;
 const PROB_FOR_INITIATING_TEST = 0.0005;
 const TEST_DURATION = 500;
+const PROB_PATH_DERIVATION = 0.05
 
 // Global vars for boundaries of simulation
 var sim_offset_x = 10;
@@ -138,12 +140,33 @@ class Person {
       }
       
     } else if (this.state == "walking") {
-      // TODO: make walking people look a bit less like particles, e.g. by making it a random walk or rotating the velocity vector randomly by a few degrees on each update
+      //changes the speed by the same random value for x and y with a given chance, limits the absolute of the maximum speed to a global variable
+      this.variation=2*sin(2*PI*random());
+
+      if (random()<PROB_PATH_DERIVATION){
+        this.speedx +=this.variation;
+        if (this.speedx>MAX_SPEED){
+          this.speedx=MAX_SPEED
+        } else if (this.speedx<-MAX_SPEED){
+          this.speedx=-MAX_SPEED
+        }
+
+        this.speedy +=this.variation;
+        if (this.speedy>MAX_SPEED){
+          this.speedy=MAX_SPEED
+        } else if (this.speedy<-MAX_SPEED){
+          this.speedy=-MAX_SPEED
+        }
+      }
+
       this.posx += this.speedx;
       this.posy += this.speedy;
       this.checkWallCollision();
       
       if (random() < PROB_FOR_INITIATING_TEST) {
+        //Test this person for corona
+        this.state="busy"
+
         // TODO: Test this person for Corona
         // - Set to busy for TEST_DURATION
         // - Indicate test process with a popup
