@@ -15,9 +15,10 @@ const SPEED = 2;
 const MAX_SPEED =  3;
 const PERSON_SIZE = 20;
 const PROB_TRANSITION_TO_BUSY = 0.005;
-const BUSY_DURATION = 300;
-const PROB_FOR_INITIATING_TEST = 0.0005;
-const TEST_DURATION = 500;
+const BUSY_DURATION = 200;
+const PROB_FOR_INITIATING_TEST = 0.005;
+const TEST_DURATION = 200;
+const PROP_CORONA_POSITIVE=0.1
 const PROB_PATH_DERIVATION = 0.05
 
 // Global vars for boundaries of simulation
@@ -73,6 +74,7 @@ function draw() {
   simDisplay.draw();
   app.draw();
   server.draw();
+
 }
 
 //==================================//
@@ -87,6 +89,7 @@ class Simulation {
     this.height = height;
     
     this.persons = [];
+    this.popups=[];
     
     // Add some people
     for (let i=0; i<n; i++) {
@@ -105,6 +108,7 @@ class Simulation {
   
   update() {
     this.persons.forEach(person => person.update());
+    this.popups.forEach(popup=>popup.update());
     
     // TODO: Check if people are close to each other; if yes:
     // - Set both to busy (talking to each other)
@@ -133,13 +137,14 @@ class Person {
   
   update() {
     if (this.state == "busy") {
+      //decreases the counter of state busy and switches to walking otherwise
       this.busyCounter -= 1;
       
       if (this.busyCounter <= 0) {
         this.state = "walking";
       }
-      
-    } else if (this.state == "walking") {
+    } 
+    else if (this.state == "walking") {
       //changes the speed by the same random value for x and y with a given chance, limits the absolute of the maximum speed to a global variable
       this.variation=2*sin(2*PI*random());
 
@@ -158,29 +163,51 @@ class Person {
           this.speedy=-MAX_SPEED
         }
       }
-
       this.posx += this.speedx;
       this.posy += this.speedy;
-      this.checkWallCollision();
-      
-      if (random() < PROB_FOR_INITIATING_TEST) {
-        //Test this person for corona
-        this.state="busy"
+      this.checkWallCollision(); 
 
-        // TODO: Test this person for Corona
-        // - Set to busy for TEST_DURATION
-        // - Indicate test process with a popup
-        // - Indicate test result
-        // - If result is positive:
-        //   * Send ID to RKI-Server
-        //   * Set color of dot to red
-        //   * Send dot to quarantine, 
-        //     e.g. let it walk out of the boundaries
-      
-      } else if (random() < PROB_TRANSITION_TO_BUSY) {
+      if (random() < PROB_FOR_INITIATING_TEST) {
+        //Initiates Test state
+        this.state="testing";
+        this.busyCounter=TEST_DURATION;
+        let textbox = new Popup(this.posx,this.posy,100,30,"Testing...","black",TEST_DURATION-2);
+        sim.popups.push(textbox);      
+      } 
+      else if (random() < PROB_TRANSITION_TO_BUSY) {
         this.state = "busy";
         this.busyCounter = BUSY_DURATION + random() * BUSY_DURATION;
       }
+    } 
+    else if (this.state=="testing"){
+      //shows the test result when the testing time is over and decreases it otherwise
+        if (this.busyCounter <=0){
+          //how long the test result is displayed
+          let display_time=40
+          if(random()<PROP_CORONA_POSITIVE){
+            //moves to quarantine
+            this.speedy=0;
+            this.speedx=-4;
+            this.color="red";
+            this.state="quarantining";
+            
+            let textbox = new Popup(this.posx,this.posy,100,30,"Test positive","red",display_time);
+            sim.popups.push(textbox);
+            //TODO call RKI api
+            //rki_api(this.id)
+          } else{
+            let textbox = new Popup(this.posx,this.posy,100,30,"Test negative","green",display_time);
+            sim.popups.push(textbox);
+            this.state="walking";
+          } 
+        } else {
+          this.busyCounter -= 1;
+        }
+    } 
+    else if (this.state=="quarantining"){
+        //moves to quarantine
+        this.posx += this.speedx;
+        this.posy += this.speedy;
     }
   }
   
@@ -271,6 +298,8 @@ class SimulationDisplay extends TextElement {
     drawingContext.shadowOffsetX = -5;
     
     stroke("black");
+    // Draw Text boxes
+    sim.popups.forEach(popup=>popup.show());
     
     // Draw circles for people
     sim.persons.forEach(person => {
@@ -340,5 +369,37 @@ class ServerDisplay extends TextBlockList {
                                     "red")
     
     this.elements = [serverIDs];
+  }
+}
+
+class Popup {
+  constructor(x,y,length, height, input_text,color,time){
+    this.x=x
+    this.y=y
+    this.length=length
+    this.height=height
+    this.color=color
+    this.input_text=input_text
+    this.time=time
+    this.opacity=127
+  }
+
+  show() {
+    let hue=200
+    textSize(20)
+    fill(this.color);
+    text(this.input_text,this.x,this.y,this.length,this.height);
+    fill(hue,hue,hue,this.opacity);
+    rect(this.x,this.y,this.length,this.height,5);
+    //fills the back of the box with 50% opacity
+  }
+
+  update() {
+    if (this.time<0) {
+      sim.popups.pop(this);
+    }
+    else {
+      this.time-=1;
+    }
   }
 }
