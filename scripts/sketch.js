@@ -20,6 +20,7 @@ const PROB_FOR_INITIATING_TEST = 0.005;
 const TEST_DURATION = 200;
 const PROP_CORONA_POSITIVE=0.1
 const PROB_PATH_DERIVATION = 0.05
+const REG_DISTANCE = 20
 
 // Global vars for boundaries of simulation
 var sim_offset_x = 10;
@@ -68,9 +69,9 @@ function setup() {
 
 function draw() {
   background(220);
-  
+      
   sim.update();
-  
+
   simDisplay.draw();
   app.draw();
   server.draw();
@@ -110,13 +111,7 @@ class Simulation {
     this.persons.forEach(person => person.update());
     this.popups.forEach(popup=>popup.update());
     
-    // TODO: Check if people are close to each other; if yes:
-    // - Set both to busy (talking to each other)
-    // - Create popup, indicating that IDs got exchanged
-    // - Maybe also change color (pulsating brightness?)
-    // - If "our" light green dot is involved:
-    //   display new ID under "Collected IDs"
-  }
+    }
 }
 
 
@@ -135,7 +130,9 @@ class Person {
     this.busyCounter = 0;
   }
   
-  update() {
+  update() {    
+    
+
     if (this.state == "busy") {
       //decreases the counter of state busy and switches to walking otherwise
       this.busyCounter -= 1;
@@ -165,7 +162,10 @@ class Person {
       }
       this.posx += this.speedx;
       this.posy += this.speedy;
-      this.checkWallCollision(); 
+      this.checkWallCollision();
+      if(frameCount%30==0){
+        sim.persons.forEach(person => this.check_distance(person));
+      }
 
       if (random() < PROB_FOR_INITIATING_TEST) {
         //Initiates Test state
@@ -187,7 +187,7 @@ class Person {
           if(random()<PROP_CORONA_POSITIVE){
             //moves to quarantine
             this.speedy=0;
-            this.speedx=-4;
+            this.speedx=-1;
             this.color="red";
             this.state="quarantining";
             
@@ -219,6 +219,24 @@ class Person {
     if (this.posy < this.size/2 | 
         this.posy > this.height - this.size/2) {
       this.speedy *= -1;
+    }
+  }
+
+  check_distance(person){
+    if (this!==person){        
+      let distance = Infinity
+       distance = sqrt((this.posx-person.posx)**2+(this.posy-person.posy)**2)
+      if (distance < REG_DISTANCE){
+        this.state="busy";
+        person.state="busy";
+        this.busyCounter=BUSY_DURATION;
+        person.busyCounter=BUSY_DURATION;
+        //TODO store collected IDs
+        //if this.id==hello-world{
+          //store(person.id)}
+        let textbox = new Popup(this.posx,this.posy,120,30,"ID exchange","black",BUSY_DURATION);
+        sim.popups.push(textbox);
+        }
     }
   }
 }
