@@ -18,7 +18,7 @@ const PROB_TRANSITION_TO_BUSY = 0.005;
 const BUSY_DURATION = 200;
 const PROB_FOR_INITIATING_TEST = 0.005;
 const TEST_DURATION = 200;
-const PROP_CORONA_POSITIVE=0.1
+const PROP_CORONA_POSITIVE=0.5
 const PROB_PATH_DERIVATION = 0.05
 const REG_DISTANCE = 20
 
@@ -37,6 +37,10 @@ const ownIDHeight = 65;
 const collectedIDsHeight = 130;
 const serverIDsHeight = 130;
 const CORNER_RADIUS = 8;
+
+// RKI Server Constants
+const INFECTED_IDS = "infectedIDs";
+const COLLECTED_IDS_KEY_PREFIX = "collectedIDs_";
 
 function setup() {
   var canvas = createCanvas(WIDTH, HEIGHT);
@@ -114,6 +118,32 @@ class Simulation {
     }
 }
 
+class RKIServer {
+  constructor() {
+    if (window.sessionStorage.getItem(INFECTED_IDS) == null) {
+      window.sessionStorage.setItem(INFECTED_IDS, JSON.stringify(["init-init"]));
+    }
+  }
+
+  checkIDs(ids) {
+    var infectedIDs = JSON.parse(window.sessionStorage.getItem(INFECTED_IDS));
+    var foundInfected = [];
+  
+    for (const id of ids) {
+      if (infectedIDs.includes(id)) {
+        foundInfected.push(id);
+      }
+    }
+
+    return foundInfected;
+  }
+
+  registerInfected(id) {
+    var infectedIDs = JSON.parse(window.sessionStorage.getItem(INFECTED_IDS));
+    infectedIDs.push(id);
+    window.sessionStorage.setItem(INFECTED_IDS, JSON.stringify(infectedIDs));
+  }
+}
 
 class Person {
   constructor(posx, posy, size, color, id, simWidth, simHeight) {
@@ -128,6 +158,7 @@ class Person {
     this.height = simHeight;
     this.state = "walking";
     this.busyCounter = 0;
+    this.rkiServerAPI = new RKIServer();
   }
   
   update() {    
@@ -193,8 +224,8 @@ class Person {
             
             let textbox = new Popup(this.posx,this.posy,100,30,"Test positive","red",display_time);
             sim.popups.push(textbox);
-            //TODO call RKI api
-            //rki_api(this.id)
+            console.log(this.id);
+            this.rkiServerAPI.registerInfected(this.id);
           } else{
             let textbox = new Popup(this.posx,this.posy,100,30,"Test negative","green",display_time);
             sim.popups.push(textbox);
