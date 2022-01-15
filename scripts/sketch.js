@@ -6,14 +6,15 @@ var simDisplay;
 var app;
 var server;
 
-const WIDTH = 600;
-const HEIGHT = 530;
+const WIDTH = 600*2;
+const HEIGHT = 530*2;
 
 // Simulation parameters
-const N = 6;
+const N = 100;
+const MIN_N = 0.6 * N;
 const SPEED = 2;
 const MAX_SPEED =  3;
-const PERSON_SIZE = 20;
+const PERSON_SIZE = 5;
 const PROB_TRANSITION_TO_BUSY = 0.005;
 const BUSY_DURATION = 200;
 const PROB_FOR_INITIATING_TEST = 0.005;
@@ -95,7 +96,8 @@ class Simulation {
     
     this.persons = [];
     this.popups=[];
-    
+    this.idCounter=0;
+
     // Add some people
     for (let i=0; i<n; i++) {
       this.persons.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
@@ -106,15 +108,33 @@ class Simulation {
                                    this.width,
                                    this.height));
     }
-    
+    this.idCounter+=n;
     this.persons[0].color = "lime";
     this.persons[1].color = "red";
   }
   
   update() {
-    this.persons.forEach(person => person.update());
+    let stillAlive=[];
+    for (let j=0;j<this.persons.length;j++){
+      this.persons[j].update();
+      if (!this.persons[j].hasLeftField){
+        stillAlive.push(this.persons[j]);
+        }
+    }
+    if (stillAlive.length<MIN_N){
+          for (let k=0; k<0.2*N; k++) {
+            stillAlive.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
+                                   random() * (this.height-2*sim_offset_y) + sim_offset_y,
+                                   20,
+                                   "grey",
+                                   this.idCounter+k,
+                                   this.width,
+                                   this.height));
+          }
+    }
+    this.idCounter+=k;
+    this.persons=stillAlive;
     this.popups.forEach(popup=>popup.update());
-    
     }
 }
 
@@ -159,6 +179,7 @@ class Person {
     this.state = "walking";
     this.busyCounter = 0;
     this.rkiServerAPI = new RKIServer();
+    this.hasLeftField=false;
   }
   
   update() {    
@@ -218,7 +239,7 @@ class Person {
           if(random()<PROP_CORONA_POSITIVE){
             //moves to quarantine
             this.speedy=0;
-            this.speedx=-1;
+            this.speedx=-5;
             this.color="red";
             this.state="quarantining";
             
@@ -239,6 +260,9 @@ class Person {
         //moves to quarantine
         this.posx += this.speedx;
         this.posy += this.speedy;
+        if (this.posx<-2*this.size){
+          this.hasLeftField=true;
+        }
     }
   }
   
