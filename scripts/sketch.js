@@ -17,8 +17,8 @@ const HEIGHT = 530;
 // Simulation parameters
 const MAX_N = 10;
 const MIN_N = 0.6 * MAX_N;
-const SPEED = 2;
-const MAX_SPEED =  3;
+const SPEED = 1;
+const MAX_SPEED =  2;
 const PERSON_SIZE = 5;
 const PROB_PATH_DERIVATION = 0.05
 const CRITICAL_DISTANCE = 20
@@ -251,7 +251,7 @@ class Person {
     this.timer = 100 + 1000 * random();
     this.color = "red";
 
-    let textbox = new Popup(this.posx,this.posy,100,30,"Infected!","black", POPUP_DISPLAY_DURATION-2);
+    let textbox = new Popup(this.posx,this.posy,100,30,"Infected!","black", POPUP_DISPLAY_DURATION);
     sim.popups.push(textbox); 
   }
 
@@ -261,12 +261,15 @@ class Person {
 
     // Notify RKI of your infection and go to quarantine
     this.rkiServerAPI.registerInfected(this.id);
-    let textbox = new Popup(this.posx,this.posy,100,30,"Quarantining","black", POPUP_DISPLAY_DURATION-2);
+    let textbox = new Popup(this.posx,this.posy,100,30,"Quarantining","black", POPUP_DISPLAY_DURATION);
     sim.popups.push(textbox); 
   }
 
   registerID(id) {
     this.collectedIDs.push(id);
+
+    let textbox = new Popup(this.posx,this.posy,100,30,"Exchanged ID","black", POPUP_DISPLAY_DURATION);
+    sim.popups.push(textbox); 
   }
 
   move() {
