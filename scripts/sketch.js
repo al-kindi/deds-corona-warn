@@ -20,13 +20,9 @@ const MIN_N = 0.6 * MAX_N;
 const SPEED = 2;
 const MAX_SPEED =  3;
 const PERSON_SIZE = 5;
-const PROB_TRANSITION_TO_BUSY = 0.005;
-const BUSY_DURATION = 200;
-const PROB_FOR_INITIATING_TEST = 0.005;
-const TEST_DURATION = 200;
-const PROP_CORONA_POSITIVE=0.5
 const PROB_PATH_DERIVATION = 0.05
-const REG_DISTANCE = 20
+const CRITICAL_DISTANCE = 20
+const POPUP_DISPLAY_DURATION = 200;
 
 // Global vars for boundaries of simulation
 var sim_offset_x = 10;
@@ -148,9 +144,10 @@ class Simulation {
         stillAlive.push(this.persons[j]);
         }
     }
+    this.actual_n = stillAlive.length;
 
     // Replenish pool of people if too many have dropped out
-    if (stillAlive.length < this.min_n){
+    if (this.actual_n < this.min_n) {
       for (let k=this.actual_n; k<this.min_n; k++) {
         stillAlive.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
                                random() * (this.height-2*sim_offset_y) + sim_offset_y,
@@ -253,6 +250,9 @@ class Person {
     this.healthState = State.INFECTED;
     this.timer = 100 + 1000 * random();
     this.color = "red";
+
+    let textbox = new Popup(this.posx,this.posy,100,30,"Infected!","black", POPUP_DISPLAY_DURATION-2);
+    sim.popups.push(textbox); 
   }
 
   getSymptoms() {
@@ -261,7 +261,7 @@ class Person {
 
     // Notify RKI of your infection and go to quarantine
     this.rkiServerAPI.registerInfected(this.id);
-    let textbox = new Popup(this.posx,this.posy,100,30,"Quarantining...","black",TEST_DURATION-2);
+    let textbox = new Popup(this.posx,this.posy,100,30,"Quarantining","black", POPUP_DISPLAY_DURATION-2);
     sim.popups.push(textbox); 
   }
 
@@ -350,8 +350,8 @@ class Person {
       let distance = Infinity
       distance = sqrt((this.posx-person.posx)**2 + (this.posy-person.posy)**2)
 
-      if (distance < REG_DISTANCE) {
-        let textbox = new Popup(this.posx,this.posy,120,30,"ID exchange","black",BUSY_DURATION);
+      if (distance < CRITICAL_DISTANCE) {
+        let textbox = new Popup(this.posx,this.posy,120,30,"ID exchange","black",10);
         sim.popups.push(textbox);
 
         return true;
