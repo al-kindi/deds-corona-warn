@@ -1,6 +1,11 @@
 // Using the p5.js library
 // REFERENCE: https://p5js.org/reference/
 
+
+
+//=================================//
+//   Initialize global variables
+//=================================//
 var sim;
 var simDisplay;
 var app;
@@ -43,6 +48,11 @@ const CORNER_RADIUS = 8;
 const INFECTED_IDS = "infectedIDs";
 const COLLECTED_IDS_KEY_PREFIX = "collectedIDs_";
 
+
+
+//=================================//
+//      Runs once at startup
+//=================================//
 function setup() {
   var canvas = createCanvas(WIDTH, HEIGHT);
   // Move the canvas so it’s inside our <div id="sketch-holder">.
@@ -69,8 +79,12 @@ function setup() {
   // Dynamically update HTML elements with JS variables
   document.getElementById("heading").innerHTML = "Subtitle changed...";
   document.getElementById("name").innerHTML = "Jane Doe";
-
 }
+
+
+//=================================//
+//        Runs every frame
+//=================================//
 
 function draw() {
   background(220);
@@ -80,13 +94,12 @@ function draw() {
   simDisplay.draw();
   app.draw();
   server.draw();
-
 }
+
 
 //==================================//
 // Code for creating the simulation
 //==================================//
-
 class Simulation {
   constructor(max_n, min_n, size, width, height) {
     this.max_n = max_n;
@@ -308,7 +321,6 @@ class Person {
 //=================================//
 // Code for drawing the simulation
 //=================================//
-
 class Element {
   constructor(offset_x, offset_y, size_x, size_y) {
     this.offset_x = offset_x;
