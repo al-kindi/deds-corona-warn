@@ -10,6 +10,7 @@ var sim;
 var simDisplay;
 var app;
 var server;
+var serverDisplay;
 
 const WIDTH = 600;
 const HEIGHT = 530;
@@ -23,6 +24,7 @@ const PERSON_SIZE = 5;
 const PROB_PATH_DERIVATION = 0.05
 const CRITICAL_DISTANCE = 20
 const POPUP_DISPLAY_DURATION = 200;
+const USE_APP = true;
 
 // Global vars for boundaries of simulation
 var sim_offset_x = 10;
@@ -41,8 +43,7 @@ const serverIDsHeight = 130;
 const CORNER_RADIUS = 8;
 
 // RKI Server Constants
-const INFECTED_IDS = "infectedIDs";
-const COLLECTED_IDS_KEY_PREFIX = "collectedIDs_";
+var rki_infected_ids = []
 
 // Enum for the states of a person
 class State {
@@ -72,8 +73,10 @@ function setup() {
                            app_height,
                            20,
                            20);
+
+  server = new RKIServer();
   
-  server = new ServerDisplay(3/5 * width,
+  serverDisplay = new ServerDisplay(3/5 * width,
                              sim_offset_y + app_height + 10,
                              2/5 * width - 10,
                              server_height,
@@ -94,10 +97,11 @@ function draw() {
   background(220);
       
   sim.update();
+  serverDisplay.update();
 
   simDisplay.draw();
   app.draw();
-  server.draw();
+  serverDisplay.draw();
 }
 
 
@@ -169,7 +173,7 @@ class Simulation {
         this.exchangeIDsAndInfectNearbyPeople();
     }
     this.frameCount += 1;
-    console.log(this.frameCount);
+    //console.log(this.frameCount);
   }
 
   // Danger zone: quadratic runtime!
@@ -200,28 +204,18 @@ class Simulation {
 
 class RKIServer {
   constructor() {
-    if (window.sessionStorage.getItem(INFECTED_IDS) == null) {
-      window.sessionStorage.setItem(INFECTED_IDS, JSON.stringify(["init-init"]));
-    }
   }
 
   checkIDs(ids) {
-    var infectedIDs = JSON.parse(window.sessionStorage.getItem(INFECTED_IDS));
-    var foundInfected = [];
-  
-    for (const id of ids) {
-      if (infectedIDs.includes(id)) {
-        foundInfected.push(id);
-      }
+    let foundInfected = false;
+    for (let i=0; i<ids.length; i++) {
+      foundInfected = foundInfected || rki_infected_ids.includes(ids[i]);
     }
-
     return foundInfected;
   }
 
   registerInfected(id) {
-    var infectedIDs = JSON.parse(window.sessionStorage.getItem(INFECTED_IDS));
-    infectedIDs.push(id);
-    window.sessionStorage.setItem(INFECTED_IDS, JSON.stringify(infectedIDs));
+    rki_infected_ids.push(id);
   }
 }
 
@@ -238,7 +232,6 @@ class Person {
     this.width = simWidth;
     this.height = simHeight;
 
-    this.rkiServerAPI = new RKIServer();
     this.collectedIDs = [];
 
     this.healthState = State.HEALTHY;
@@ -248,7 +241,7 @@ class Person {
 
   getInfected() {
     this.healthState = State.INFECTED;
-    this.timer = 100 + 1000 * random();
+    this.timer = 50 + 500 * random();
     this.color = "red";
 
     let textbox = new Popup(this.posx,this.posy,100,30,"Infected!","black", POPUP_DISPLAY_DURATION);
@@ -260,7 +253,7 @@ class Person {
     this.color = "purple";
 
     // Notify RKI of your infection and go to quarantine
-    this.rkiServerAPI.registerInfected(this.id);
+    server.registerInfected(this.id);
     let textbox = new Popup(this.posx,this.posy,100,30,"Quarantining","black", POPUP_DISPLAY_DURATION);
     sim.popups.push(textbox); 
   }
@@ -311,6 +304,13 @@ class Person {
           this.move();
           this.checkWallCollision();
 
+          if (USE_APP) {
+            let riskContact = server.checkIDs(this.collectedIDs);
+            if (riskContact) {
+              this.healthState = State.QUARANTINING;
+            }
+          }
+
         } else {
           // In this phase, if the timer reaches 0 the person gets infected randomly
           this.getInfected();
@@ -322,6 +322,12 @@ class Person {
           this.timer -= 1;
           this.move();
           this.checkWallCollision();
+          if (USE_APP) {
+            let riskContact = server.checkIDs(this.collectedIDs);
+            if (riskContact) {
+              this.healthState = State.QUARANTINING;
+            }
+          }
 
         } else {
           // In this phase, if the timer reaches 0 the person gets symptoms and quarantines themself
@@ -448,6 +454,10 @@ class SimulationDisplay extends TextElement {
     sim.persons.forEach(person => {
       fill(person.color);
       circle(person.posx, person.posy, person.size);
+      textSize(10);
+      fill(255);
+      textAlign(CENTER);
+      text(person.id, person.posx, person.posy);
     });
     pop();
   }
@@ -508,10 +518,19 @@ class ServerDisplay extends TextBlockList {
                                     this.size_x - 2*elementMarginX,
                                     serverIDsHeight,
                                     "Infected IDs",
-                                    "bbbb-bbbb",
+                                    "<placeholder>",
                                     "red")
     
     this.elements = [serverIDs];
+  }
+
+  update() {
+    let ids = "";
+    for (let i=0; i<rki_infected_ids.length; i++) {
+      ids += rki_infected_ids[i] + "\n";
+    }
+
+    this.elements[0].subtitle = ids;
   }
 }
 
