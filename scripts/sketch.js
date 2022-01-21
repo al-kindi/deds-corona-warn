@@ -6,12 +6,12 @@ var simDisplay;
 var app;
 var server;
 
-const WIDTH = 600*2;
-const HEIGHT = 530*2;
+const WIDTH = 600;
+const HEIGHT = 530;
 
 // Simulation parameters
-const N = 100;
-const MIN_N = 0.6 * N;
+const MAX_N = 10;
+const MIN_N = 0.6 * MAX_N;
 const SPEED = 2;
 const MAX_SPEED =  3;
 const PERSON_SIZE = 5;
@@ -48,7 +48,7 @@ function setup() {
   // Move the canvas so it’s inside our <div id="sketch-holder">.
   canvas.parent('sketch-holder');
   
-  sim = new Simulation(N, PERSON_SIZE, sim_size_x, sim_size_y);
+  sim = new Simulation(MAX_N, MIN_N, PERSON_SIZE, sim_size_x, sim_size_y);
   
   simDisplay = new SimulationDisplay(sim_offset_x, 3/5 * width - 20, sim_offset_y);
   
@@ -88,18 +88,19 @@ function draw() {
 //==================================//
 
 class Simulation {
-  constructor(n, size, width, height) {
-    this.n = n;
+  constructor(max_n, min_n, size, width, height) {
+    this.max_n = max_n;
+    this.min_n = min_n;
+    this.actual_n = 0;
     this.size = size;
     this.width = width;
     this.height = height;
     
     this.persons = [];
-    this.popups=[];
-    this.idCounter=0;
+    this.popups = [];
 
     // Add some people
-    for (let i=0; i<n; i++) {
+    for (let i=0; i<this.max_n; i++) {
       this.persons.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
                                    random() * (this.height-2*sim_offset_y) + sim_offset_y,
                                    20,
@@ -108,12 +109,16 @@ class Simulation {
                                    this.width,
                                    this.height));
     }
-    this.idCounter+=n;
+    this.actual_n = this.max_n;
+
+    // Highlight special people
     this.persons[0].color = "lime";
     this.persons[1].color = "red";
   }
   
   update() {
+
+    // Check which people are still alive, keep only these
     let stillAlive=[];
     for (let j=0;j<this.persons.length;j++){
       this.persons[j].update();
@@ -121,19 +126,23 @@ class Simulation {
         stillAlive.push(this.persons[j]);
         }
     }
-    if (stillAlive.length<MIN_N){
-          for (let k=0; k<0.2*N; k++) {
-            stillAlive.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
-                                   random() * (this.height-2*sim_offset_y) + sim_offset_y,
-                                   20,
-                                   "grey",
-                                   this.idCounter+k,
-                                   this.width,
-                                   this.height));
-          }
+
+    // Replenish pool of people if too many have dropped out
+    if (stillAlive.length < this.min_n){
+      for (let k=this.actual_n; k<this.min_n; k++) {
+        stillAlive.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
+                               random() * (this.height-2*sim_offset_y) + sim_offset_y,
+                               20,
+                               "grey",
+                               this.actual_n+k,
+                               this.width,
+                               this.height));
+      }
+      this.actual_n = this.min_n;
     }
-    this.idCounter+=k;
     this.persons=stillAlive;
+
+    // Update popups
     this.popups.forEach(popup=>popup.update());
     }
 }
@@ -245,7 +254,6 @@ class Person {
             
             let textbox = new Popup(this.posx,this.posy,100,30,"Test positive","red",display_time);
             sim.popups.push(textbox);
-            console.log(this.id);
             this.rkiServerAPI.registerInfected(this.id);
           } else{
             let textbox = new Popup(this.posx,this.posy,100,30,"Test negative","green",display_time);
