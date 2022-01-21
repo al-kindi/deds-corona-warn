@@ -48,6 +48,14 @@ const CORNER_RADIUS = 8;
 const INFECTED_IDS = "infectedIDs";
 const COLLECTED_IDS_KEY_PREFIX = "collectedIDs_";
 
+// Enum for the states of a person
+class State {
+  static HEALTHY = new State('HEALTHY');
+  static INFECTED = new State('INFECTED');
+  static QUARANTINING = new State('QUARANTINING');
+  constructor(name) { this.name = name }
+}
+
 
 
 //=================================//
