@@ -228,6 +228,7 @@ class RKIServer {
   }
 }
 
+
 class Person {
   constructor(posx, posy, size, color, id, simWidth, simHeight) {
     this.posx = posx;
@@ -239,92 +240,95 @@ class Person {
     this.id = id;
     this.width = simWidth;
     this.height = simHeight;
-    this.state = "walking";
-    this.busyCounter = 0;
+
     this.rkiServerAPI = new RKIServer();
+    this.collectedIDs = [];
+
+    this.healthState = State.HEALTHY;
+    this.timer = 100 + 1000 * random();
     this.hasLeftField=false;
   }
+
+  getInfected() {
+    this.healthState = State.INFECTED;
+    this.timer = 100 + 1000 * random();
+    this.color = "red";
+  }
+
+  getSymptoms() {
+    this.healthState = State.QUARANTINING;
+    this.color = "purple";
+
+    // Notify RKI of your infection and go to quarantine
+    this.rkiServerAPI.registerInfected(this.id);
+    let textbox = new Popup(this.posx,this.posy,100,30,"Quarantining...","black",TEST_DURATION-2);
+    sim.popups.push(textbox); 
+  }
+
+  registerID(id) {
+    this.collectedIDs.push(id);
+  }
+
+  move() {
+    //changes the speed by the same random value for x and y with a given chance, limits the absolute of the maximum speed to a global variable
+    this.variation=2*sin(2*PI*random());
+
+    if (random()<PROB_PATH_DERIVATION){
+      this.speedx +=this.variation;
+      if (this.speedx>MAX_SPEED){
+        this.speedx=MAX_SPEED
+      } else if (this.speedx<-MAX_SPEED){
+        this.speedx=-MAX_SPEED
+      }
+
+      this.speedy +=this.variation;
+      if (this.speedy>MAX_SPEED){
+        this.speedy=MAX_SPEED
+      } else if (this.speedy<-MAX_SPEED){
+        this.speedy=-MAX_SPEED
+      }
+    }
+    this.posx += this.speedx;
+    this.posy += this.speedy;
+  }
+
+  moveLeft() {
+    //moves to quarantine
+    this.posx -= 5;
+    if (this.posx < -2*this.size){
+      this.hasLeftField = true;
+    }
+  }
   
-  update() {    
-    
+  update() {
+    switch (this.healthState) {
+      case State.HEALTHY:
+        if (this.timer > 0) {
+          this.timer -= 1;
+          this.move();
+          this.checkWallCollision();
 
-    if (this.state == "busy") {
-      //decreases the counter of state busy and switches to walking otherwise
-      this.busyCounter -= 1;
-      
-      if (this.busyCounter <= 0) {
-        this.state = "walking";
-      }
-    } 
-    else if (this.state == "walking") {
-      //changes the speed by the same random value for x and y with a given chance, limits the absolute of the maximum speed to a global variable
-      this.variation=2*sin(2*PI*random());
-
-      if (random()<PROB_PATH_DERIVATION){
-        this.speedx +=this.variation;
-        if (this.speedx>MAX_SPEED){
-          this.speedx=MAX_SPEED
-        } else if (this.speedx<-MAX_SPEED){
-          this.speedx=-MAX_SPEED
-        }
-
-        this.speedy +=this.variation;
-        if (this.speedy>MAX_SPEED){
-          this.speedy=MAX_SPEED
-        } else if (this.speedy<-MAX_SPEED){
-          this.speedy=-MAX_SPEED
-        }
-      }
-      this.posx += this.speedx;
-      this.posy += this.speedy;
-      this.checkWallCollision();
-      if(frameCount%30==0){
-        sim.persons.forEach(person => this.check_distance(person));
-      }
-
-      if (random() < PROB_FOR_INITIATING_TEST) {
-        //Initiates Test state
-        this.state="testing";
-        this.busyCounter=TEST_DURATION;
-        let textbox = new Popup(this.posx,this.posy,100,30,"Testing...","black",TEST_DURATION-2);
-        sim.popups.push(textbox);      
-      } 
-      else if (random() < PROB_TRANSITION_TO_BUSY) {
-        this.state = "busy";
-        this.busyCounter = BUSY_DURATION + random() * BUSY_DURATION;
-      }
-    } 
-    else if (this.state=="testing"){
-      //shows the test result when the testing time is over and decreases it otherwise
-        if (this.busyCounter <=0){
-          //how long the test result is displayed
-          let display_time=40
-          if(random()<PROP_CORONA_POSITIVE){
-            //moves to quarantine
-            this.speedy=0;
-            this.speedx=-5;
-            this.color="red";
-            this.state="quarantining";
-            
-            let textbox = new Popup(this.posx,this.posy,100,30,"Test positive","red",display_time);
-            sim.popups.push(textbox);
-            this.rkiServerAPI.registerInfected(this.id);
-          } else{
-            let textbox = new Popup(this.posx,this.posy,100,30,"Test negative","green",display_time);
-            sim.popups.push(textbox);
-            this.state="walking";
-          } 
         } else {
-          this.busyCounter -= 1;
+          // In this phase, if the timer reaches 0 the person gets infected randomly
+          this.getInfected();
         }
-    } 
-    else if (this.state=="quarantining"){
-        //moves to quarantine
-        this.posx += this.speedx;
-        this.posy += this.speedy;
-        if (this.posx<-2*this.size){
-          this.hasLeftField=true;
+        break;
+
+      case State.INFECTED:
+        if (this.timer > 0) {
+          this.timer -= 1;
+          this.move();
+          this.checkWallCollision();
+
+        } else {
+          // In this phase, if the timer reaches 0 the person gets symptoms and quarantines themself
+          this.getSymptoms();
         }
+        break;
+
+      case State.QUARANTINING:
+        this.moveLeft();
+        break;
     }
   }
   
@@ -339,21 +343,23 @@ class Person {
     }
   }
 
+  // Returns true if the other person is within the critical distance
+  // to get infected and exchange ids
   check_distance(person){
-    if (this!==person){        
+    if (this !== person) {        
       let distance = Infinity
-       distance = sqrt((this.posx-person.posx)**2+(this.posy-person.posy)**2)
-      if (distance < REG_DISTANCE){
-        this.state="busy";
-        person.state="busy";
-        this.busyCounter=BUSY_DURATION;
-        person.busyCounter=BUSY_DURATION;
-        //TODO store collected IDs
-        //if this.id==hello-world{
-          //store(person.id)}
+      distance = sqrt((this.posx-person.posx)**2 + (this.posy-person.posy)**2)
+
+      if (distance < REG_DISTANCE) {
         let textbox = new Popup(this.posx,this.posy,120,30,"ID exchange","black",BUSY_DURATION);
         sim.popups.push(textbox);
-        }
+
+        return true;
+      
+      } else {
+
+        return false;
+      }
     }
   }
 }
