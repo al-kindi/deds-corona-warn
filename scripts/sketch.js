@@ -116,6 +116,7 @@ class Simulation {
     this.size = size;
     this.width = width;
     this.height = height;
+    this.frameCount = 0;
     
     this.persons = [];
     this.popups = [];
@@ -133,8 +134,8 @@ class Simulation {
     this.actual_n = this.max_n;
 
     // Highlight special people
-    this.persons[0].color = "lime";
-    this.persons[1].color = "red";
+    //this.persons[0].color = "lime";
+    //this.persons[1].color = "red";
   }
   
   update() {
@@ -165,8 +166,40 @@ class Simulation {
 
     // Update popups
     this.popups.forEach(popup=>popup.update());
+
+    // Infect people
+    if(this.frameCount%10 == 0){
+        this.exchangeIDsAndInfectNearbyPeople();
     }
+    this.frameCount += 1;
+    console.log(this.frameCount);
+  }
+
+  // Danger zone: quadratic runtime!
+  exchangeIDsAndInfectNearbyPeople() {
+    for (let i=0; i<this.persons.length; i++) {
+
+      // For all people, check:
+        for (let j=0; j<this.persons.length; j++) {
+
+        // Only for people that are still healthy, check:
+        if (i != j && this.persons[j].healthState == State.HEALTHY) {
+          let proximity = this.persons[i].check_distance(this.persons[j])
+          if (proximity) {
+            // Send ID of person i to person j
+            this.persons[j].registerID(this.persons[i].id)
+
+            // If person i is infected, also infect person j:
+            if (this.persons[i].healthState != State.HEALTHY) {
+              this.persons[j].getInfected();
+            }
+          }
+        }
+      }
+    }
+  }
 }
+
 
 class RKIServer {
   constructor() {
