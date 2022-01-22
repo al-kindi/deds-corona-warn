@@ -143,17 +143,19 @@ class Simulation {
     this.width = width;
     this.height = height;
     this.frameCount = 0;
+    this.idCount = 0;
     
     this.persons = [];
     this.popups = [];
 
     // Add some people
     for (let i=0; i<MAX_N; i++) {
+      this.idCount += 1;
       this.persons.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
                                    random() * (this.height-2*sim_offset_y) + sim_offset_y,
                                    20,
                                    "grey",
-                                   i,
+                                   this.idCount,
                                    this.width,
                                    this.height));
     }
@@ -178,11 +180,12 @@ class Simulation {
     // Replenish pool of people if too many have dropped out
     if (stillAlive.length < MIN_N) {
       for (let k=stillAlive.length; k<MIN_N; k++) {
+        this.idCount += 1;
         stillAlive.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
                                random() * (this.height-2*sim_offset_y) + sim_offset_y,
                                20,
                                "grey",
-                               this.actual_n+k,
+                               this.idCount,
                                this.width,
                                this.height));
       }
