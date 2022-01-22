@@ -30,6 +30,7 @@ const PROB_PATH_DERIVATION = 0.05
 var CRITICAL_DISTANCE = 20
 const POPUP_DISPLAY_DURATION = 200;
 const USE_APP = true;
+var SELECTED_PERSON = null;
 
 // Global vars for boundaries of simulation
 var sim_offset_x = 10;
@@ -107,10 +108,27 @@ function draw() {
       
   sim.update();
   serverDisplay.update();
+  app.update();
 
   simDisplay.draw();
   app.draw();
   serverDisplay.draw();
+}
+
+//=================================//
+// Runs every time the mouse is pressed
+//=================================//
+
+function mousePressed() {
+  // When a person is clicked on, their app content is displayed on the right
+  let personSize = sim.persons[0].size;
+  for (let i=0; i<sim.persons.length; i++) {
+    if ((Math.abs(mouseX - sim_offset_x - sim.persons[i].posx) < personSize) &&
+        (Math.abs(mouseY - sim_offset_y - sim.persons[i].posy) < personSize)) {
+      SELECTED_PERSON = sim.persons[i];
+      break;
+    }
+  }
 }
 
 
@@ -510,23 +528,62 @@ class WarnAppDisplay extends TextBlockList {
   constructor(offset_x, offset_y, size_x, size_y, elementMarginX, elementMarginY) {
     super(offset_x, offset_y, size_x, size_y, elementMarginX, elementMarginY, "Corona-Warn-App", "", "white");
     
-    let ownID = new TextElement(0,
-                                0,
-                                this.size_x-2*elementMarginX,
-                                ownIDHeight,
-                                "My own ID",
-                                "hello-world",
-                                "lime");
+    this.ownID = null;
+    this.collectedIDs = null;
+    this.setDefaultValues();
+    this.elements = [this.ownID, this.collectedIDs];
     
-    let collectedIDs = new TextElement(0,
-                                       0,
-                                       this.size_x - 2*elementMarginX,
-                                       collectedIDsHeight, 
-                                       "Collected IDs", 
-                                       "aaaa-aaaaa\nbbbb-bbbb\ncccc-cccc",
-                                       "lightgrey")
+  }
+
+  setDefaultValues() {
+    this.ownID = new TextElement(0,
+                            0,
+                            this.size_x-2*this.elementMarginX,
+                            ownIDHeight,
+                            "My own ID",
+                            "<no person selected>",
+                            "lime");
     
-    this.elements = [ownID, collectedIDs];
+    this.collectedIDs = new TextElement(0,
+                                   0,
+                                   this.size_x - 2*this.elementMarginX,
+                                   collectedIDsHeight, 
+                                   "Collected IDs", 
+                                   "-",
+                                   "lightgrey")
+  }
+
+  update() {
+    if (!(SELECTED_PERSON === null)) {
+      this.ownID = new TextElement(0,
+                                  0,
+                                  this.size_x-2*this.elementMarginX,
+                                  ownIDHeight,
+                                  "My own ID",
+                                  SELECTED_PERSON.id,
+                                  "lime");
+      let formatedIDs = this.formatIDs(SELECTED_PERSON.collectedIDs);
+      this.collectedIDs = new TextElement(0,
+                                   0,
+                                   this.size_x - 2*this.elementMarginX,
+                                   collectedIDsHeight, 
+                                   "Collected IDs", 
+                                   formatedIDs,
+                                   "lightgrey");
+      this.elements = [this.ownID, this.collectedIDs];
+
+    }
+  }
+
+  formatIDs(ids) {
+    let s = "";
+    for (let i=0; i<ids.length; i++) {
+      s += ids[i] + " • ";
+      if (i%8 == 7) {
+        s += "\n";
+      }
+    }
+    return s
   }
 }
 
@@ -548,7 +605,10 @@ class ServerDisplay extends TextBlockList {
   update() {
     let ids = "";
     for (let i=0; i<rki_infected_ids.length; i++) {
-      ids += rki_infected_ids[i] + "\n";
+      ids += rki_infected_ids[i] + " • ";
+      if (i%8 == 7) {
+        ids += "\n";
+      }
     }
 
     this.elements[0].subtitle = ids;
