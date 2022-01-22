@@ -323,7 +323,8 @@ class Person {
           if (USE_APP) {
             let riskContact = server.checkIDs(this.collectedIDs);
             if (riskContact) {
-              this.healthState = State.QUARANTINING;
+              //this.healthState = State.QUARANTINING; // Unneccesary?
+              // TODO: Popup saying "tested negative" or something
             }
           }
 
@@ -342,6 +343,8 @@ class Person {
             let riskContact = server.checkIDs(this.collectedIDs);
             if (riskContact) {
               this.healthState = State.QUARANTINING;
+              server.registerInfected(this.id);
+              // TODO: Popup saying "tested positive" or something
             }
           }
 
