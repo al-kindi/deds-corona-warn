@@ -12,17 +12,23 @@ var app;
 var server;
 var serverDisplay;
 
+// Sliders for constants
+var slider_max_n;
+var slider_speed;
+var slider_critical_distance;
+var button_use_app; //TODO
+
 const WIDTH = 600;
 const HEIGHT = 530;
 
 // Simulation parameters
-const MAX_N = 10;
-const MIN_N = 0.6 * MAX_N;
-const SPEED = 1;
+var MAX_N = 10;
+var MIN_N = 0.6 * MAX_N;
+var SPEED = 1;
 const MAX_SPEED =  2;
 const PERSON_SIZE = 5;
 const PROB_PATH_DERIVATION = 0.05
-const CRITICAL_DISTANCE = 20
+var CRITICAL_DISTANCE = 20
 const POPUP_DISPLAY_DURATION = 200;
 const USE_APP = true;
 
@@ -82,6 +88,8 @@ function setup() {
                              server_height,
                              20,
                              20);
+
+  createSliders();
   
   // Dynamically update HTML elements with JS variables
   document.getElementById("heading").innerHTML = "Subtitle changed...";
@@ -95,6 +103,8 @@ function setup() {
 
 function draw() {
   background(220);
+
+  updateConstantsFromSliders();
       
   sim.update();
   serverDisplay.update();
@@ -377,6 +387,30 @@ class Person {
 //=================================//
 // Code for drawing the simulation
 //=================================//
+function createSliders() {
+  // Syntax: createSlider(min, max, [initial_value], [step_size])
+  slider_max_n = createSlider(5, 50, 10, 5);
+  slider_speed = createSlider(0.5, 5, 1, 0.5);
+  slider_critical_distance = createSlider(10, 100, 30, 10);
+  
+  slider_max_n.position(30, 30);
+  slider_speed.position(30, 50);
+  slider_critical_distance.position(30, 70);
+
+  slider_max_n.style('width', '80px');
+  slider_speed.style('width', '80px');
+  slider_critical_distance.style('width', '80px');
+}
+
+function updateConstantsFromSliders() {
+  MAX_N = slider_max_n.value();
+  SPEED = slider_speed.value();
+  CRITICAL_DISTANCE = slider_critical_distance.value();
+
+  MIN_N = 0.6 * MAX_N;
+}
+
+
 class Element {
   constructor(offset_x, offset_y, size_x, size_y) {
     this.offset_x = offset_x;
