@@ -25,7 +25,6 @@ const HEIGHT = 530;
 var MAX_N = 10;
 var MIN_N = 0.6 * MAX_N;
 var SPEED = 1;
-const MAX_SPEED =  2;
 const PERSON_SIZE = 5;
 const PROB_PATH_DERIVATION = 0.05
 var CRITICAL_DISTANCE = 20
@@ -69,7 +68,7 @@ function setup() {
   // Move the canvas so it’s inside our <div id="sketch-holder">.
   canvas.parent('sketch-holder');
   
-  sim = new Simulation(MAX_N, MIN_N, PERSON_SIZE, sim_size_x, sim_size_y);
+  sim = new Simulation(PERSON_SIZE, sim_size_x, sim_size_y);
   
   simDisplay = new SimulationDisplay(sim_offset_x, 3/5 * width - 20, sim_offset_y);
   
@@ -119,9 +118,7 @@ function draw() {
 // Code for creating the simulation
 //==================================//
 class Simulation {
-  constructor(max_n, min_n, size, width, height) {
-    this.max_n = max_n;
-    this.min_n = min_n;
+  constructor(size, width, height) {
     this.actual_n = 0;
     this.size = size;
     this.width = width;
@@ -132,7 +129,7 @@ class Simulation {
     this.popups = [];
 
     // Add some people
-    for (let i=0; i<this.max_n; i++) {
+    for (let i=0; i<MAX_N; i++) {
       this.persons.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
                                    random() * (this.height-2*sim_offset_y) + sim_offset_y,
                                    20,
@@ -141,7 +138,7 @@ class Simulation {
                                    this.width,
                                    this.height));
     }
-    this.actual_n = this.max_n;
+    this.actual_n = MAX_N;
 
     // Highlight special people
     //this.persons[0].color = "lime";
@@ -158,11 +155,10 @@ class Simulation {
         stillAlive.push(this.persons[j]);
         }
     }
-    this.actual_n = stillAlive.length;
 
     // Replenish pool of people if too many have dropped out
-    if (this.actual_n < this.min_n) {
-      for (let k=this.actual_n; k<this.min_n; k++) {
+    if (stillAlive.length < MIN_N) {
+      for (let k=stillAlive.length; k<MIN_N; k++) {
         stillAlive.push(new Person(random() * (this.width-2*sim_offset_x) + sim_offset_x,
                                random() * (this.height-2*sim_offset_y) + sim_offset_y,
                                20,
@@ -171,9 +167,9 @@ class Simulation {
                                this.width,
                                this.height));
       }
-      this.actual_n = this.min_n;
     }
     this.persons=stillAlive;
+    this.actual_n = this.persons.length;
 
     // Update popups
     this.popups.forEach(popup=>popup.update());
@@ -234,8 +230,9 @@ class Person {
   constructor(posx, posy, size, color, id, simWidth, simHeight) {
     this.posx = posx;
     this.posy = posy;
-    this.speedx = (2*random()-1) * SPEED;
-    this.speedy = (2*random()-1) * SPEED;
+    let movementDirection = p5.Vector.random2D();
+    this.speedx = movementDirection.x;
+    this.speedy = movementDirection.y;
     this.size = size;
     this.color = color;
     this.id = id;
@@ -280,22 +277,12 @@ class Person {
     this.variation=2*sin(2*PI*random());
 
     if (random()<PROB_PATH_DERIVATION){
-      this.speedx +=this.variation;
-      if (this.speedx>MAX_SPEED){
-        this.speedx=MAX_SPEED
-      } else if (this.speedx<-MAX_SPEED){
-        this.speedx=-MAX_SPEED
-      }
-
-      this.speedy +=this.variation;
-      if (this.speedy>MAX_SPEED){
-        this.speedy=MAX_SPEED
-      } else if (this.speedy<-MAX_SPEED){
-        this.speedy=-MAX_SPEED
-      }
+      let newDirection = p5.Vector.random2D();
+      this.speedx = newDirection.x;
+      this.speedy = newDirection.y;
     }
-    this.posx += this.speedx;
-    this.posy += this.speedy;
+    this.posx += this.speedx * SPEED;
+    this.posy += this.speedy * SPEED;
   }
 
   moveLeft() {
