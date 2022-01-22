@@ -104,8 +104,8 @@ function setup() {
   createSliders();
   
   // Dynamically update HTML elements with JS variables
-  document.getElementById("heading").innerHTML = "Subtitle changed...";
-  document.getElementById("name").innerHTML = "John Doe";
+  // document.getElementById("heading").innerHTML = "Subtitle changed...";
+  // document.getElementById("name").innerHTML = "John Doe";
 }
 
 
