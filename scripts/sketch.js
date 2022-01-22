@@ -18,8 +18,8 @@ var slider_speed;
 var slider_critical_distance;
 var button_use_app; //TODO
 
-const WIDTH = 600;
-const HEIGHT = 530;
+const WIDTH = 800;
+const HEIGHT = 600;
 
 // Simulation parameters
 var MAX_N = 10;
@@ -31,21 +31,28 @@ var CRITICAL_DISTANCE = 20
 const POPUP_DISPLAY_DURATION = 200;
 const USE_APP = true;
 var SELECTED_PERSON = null;
+var PROB_INFECTION = 0.1;
+
+// Global vars for app/display size
+var app_height = 280;
+var setting_height = 30;
 
 // Global vars for boundaries of simulation
 var sim_offset_x = 10;
 var sim_offset_y = 20;
 var sim_size_x = 3/5 * WIDTH - 20;
-var sim_size_y = HEIGHT - 2*20;
+var sim_size_y = HEIGHT - 2*20 - setting_height;
 
-// Global vars for app/server size
-var app_height = 280;
-var server_height = 200;
+// Global vars for position of slide description
+var y_location = sim_offset_y+sim_size_y+15+setting_height/2;
+
+//global vars for server height
+var server_height = sim_size_y-app_height-sim_offset_y+10;
 
 // Global vars for textblock size
 const ownIDHeight = 65;
 const collectedIDsHeight = 130;
-const serverIDsHeight = 130;
+const serverIDsHeight = server_height-20-45;
 const CORNER_RADIUS = 8;
 
 // RKI Server Constants
@@ -58,7 +65,6 @@ class State {
   static QUARANTINING = new State('QUARANTINING');
   constructor(name) { this.name = name }
 }
-
 
 
 //=================================//
@@ -89,11 +95,17 @@ function setup() {
                              20,
                              20);
 
+  settingDisplay = new SettingDisplay(sim_offset_x,
+      sim_offset_y + sim_size_y +10,
+      width-sim_offset_y,
+      setting_height);
+
+
   createSliders();
   
   // Dynamically update HTML elements with JS variables
   document.getElementById("heading").innerHTML = "Subtitle changed...";
-  document.getElementById("name").innerHTML = "Jane Doe";
+  document.getElementById("name").innerHTML = "John Doe";
 }
 
 
@@ -113,6 +125,7 @@ function draw() {
   simDisplay.draw();
   app.draw();
   serverDisplay.draw();
+  settingDisplay.draw();
   drawSliderLabels();
 }
 
@@ -218,9 +231,12 @@ class Simulation {
             // Send ID of person i to person j
             this.persons[j].registerID(this.persons[i].id)
 
-            // If person i is infected, also infect person j:
+            // If person i is infected, also infect person j wit probability PROP_INFECTION:
             if (this.persons[i].healthState != State.HEALTHY) {
-              this.persons[j].getInfected();
+              if(random()< PROB_INFECTION ){
+                this.persons[j].getInfected();
+              }
+
             }
           }
         }
@@ -405,9 +421,9 @@ function createSliders() {
   slider_speed = createSlider(0.5, 5, 1, 0.5);
   slider_critical_distance = createSlider(10, 100, 30, 10);
   
-  slider_max_n.position(70, 70);
-  slider_speed.position(70, 90);
-  slider_critical_distance.position(70, 110);
+  slider_max_n.position(40, y_location);
+  slider_speed.position(180, y_location);
+  slider_critical_distance.position(300, y_location);
 
   slider_max_n.style('width', '80px');
   slider_speed.style('width', '80px');
@@ -416,9 +432,9 @@ function createSliders() {
 
 function drawSliderLabels() {
   fill(0);
-  text("N", 30, 68);
-  text("Speed", 30, 88);
-  text("Dist", 30, 108);
+  text("N", 30, y_location-2);
+  text("Speed", 130, y_location-2);
+  text("Dist", 270, y_location-2);
 }
 
 function updateConstantsFromSliders() {
@@ -484,7 +500,7 @@ class TextElement extends Element {
 
 class SimulationDisplay extends TextElement {
   constructor(offset_x, size_x, margin) {
-    super(offset_x, margin, size_x, height - 2*margin, "Simulation", "", "white");
+    super(offset_x, margin, size_x, sim_size_y, "Simulation", "", "white");
   }
   
   draw() {
@@ -658,5 +674,11 @@ class Popup {
     else {
       this.time-=1;
     }
+  }
+}
+
+class SettingDisplay extends TextElement {
+  constructor(offset_x, offset_y, size_x, size_y) {
+    super(offset_x, offset_y, size_x, size_y, "","","white");
   }
 }
