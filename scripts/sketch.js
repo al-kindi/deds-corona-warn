@@ -113,6 +113,7 @@ function draw() {
   simDisplay.draw();
   app.draw();
   serverDisplay.draw();
+  drawSliderLabels();
 }
 
 //=================================//
@@ -398,13 +399,20 @@ function createSliders() {
   slider_speed = createSlider(0.5, 5, 1, 0.5);
   slider_critical_distance = createSlider(10, 100, 30, 10);
   
-  slider_max_n.position(30, 30);
-  slider_speed.position(30, 50);
-  slider_critical_distance.position(30, 70);
+  slider_max_n.position(70, 70);
+  slider_speed.position(70, 90);
+  slider_critical_distance.position(70, 110);
 
   slider_max_n.style('width', '80px');
   slider_speed.style('width', '80px');
   slider_critical_distance.style('width', '80px');
+}
+
+function drawSliderLabels() {
+  fill(0);
+  text("N", 30, 68);
+  text("Speed", 30, 88);
+  text("Dist", 30, 108);
 }
 
 function updateConstantsFromSliders() {
