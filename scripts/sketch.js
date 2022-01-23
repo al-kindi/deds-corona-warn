@@ -16,6 +16,7 @@ var serverDisplay;
 var slider_max_n;
 var slider_speed;
 var slider_critical_distance;
+var slider_prob_inf;
 var button_use_app;
 var simulation_running=true;
 
@@ -233,8 +234,10 @@ class Simulation {
         if (i != j && this.persons[j].healthState == State.HEALTHY) {
           let proximity = this.persons[i].check_distance(this.persons[j])
           if (proximity) {
-            // Send ID of person i to person j
-            this.persons[j].registerID(this.persons[i].id)
+            // Send ID of person i to person j if it has not registered it yet
+            if(!this.persons[j].collectedIDs.includes(this.persons[i].id)){
+              this.persons[j].registerID(this.persons[i].id)
+            }
 
             // If person i is infected, also infect person j wit probability PROP_INFECTION:
             if (this.persons[i].healthState != State.HEALTHY) {
@@ -425,14 +428,18 @@ function createSliders() {
   slider_max_n = createSlider(5, 50, 10, 5);
   slider_speed = createSlider(0.5, 5, 1, 0.5);
   slider_critical_distance = createSlider(10, 100, 30, 10);
-  
+  slider_prob_inf = createSlider(0.1, 1, 0.1, 0.1);
+
   slider_max_n.position(140, y_location);
   slider_speed.position(280, y_location);
   slider_critical_distance.position(400, y_location);
+  slider_prob_inf.position(540, y_location);
+
 
   slider_max_n.style('width', '80px');
   slider_speed.style('width', '80px');
   slider_critical_distance.style('width', '80px');
+  slider_prob_inf.style('width', '80px');
 }
 
 function drawSliderLabels() {
@@ -441,12 +448,14 @@ function drawSliderLabels() {
   text("N", 130, y_location_corr);
   text("Speed", 230, y_location_corr);
   text("Dist", 370, y_location_corr);
+  text("P_Inf", 500,y_location_corr);
 }
 
 function updateConstantsFromSliders() {
   MAX_N = slider_max_n.value();
   SPEED = slider_speed.value();
   CRITICAL_DISTANCE = slider_critical_distance.value();
+  PROB_INFECTION = slider_prob_inf.value();
 
   MIN_N = 0.6 * MAX_N;
 }
