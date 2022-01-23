@@ -300,7 +300,7 @@ class Person {
     this.timer = 50 + 500 * random();
     this.color = "red";
 
-    let textbox = new Popup(this.posx,this.posy,100,30,"Infected!","black", POPUP_DISPLAY_DURATION);
+    let textbox = new Popup(this.posx,this.posy,120,30,"Infected!","black", POPUP_DISPLAY_DURATION);
     sim.popups.push(textbox); 
   }
 
@@ -310,14 +310,14 @@ class Person {
 
     // Notify RKI of your infection and go to quarantine
     server.registerInfected(this.id);
-    let textbox = new Popup(this.posx,this.posy,100,30,"Quarantining","black", POPUP_DISPLAY_DURATION);
+    let textbox = new Popup(this.posx,this.posy,120,30,"Quarantining","black", POPUP_DISPLAY_DURATION);
     sim.popups.push(textbox); 
   }
 
   registerID(id) {
     this.collectedIDs.push(id);
 
-    let textbox = new Popup(this.posx,this.posy,100,30,"Exchanged ID","black", POPUP_DISPLAY_DURATION);
+    let textbox = new Popup(this.posx,this.posy,120,30,"Exchanged ID","black", POPUP_DISPLAY_DURATION);
     sim.popups.push(textbox); 
   }
 
@@ -719,7 +719,7 @@ class Popup {
     this.color=color
     this.input_text=input_text
     this.time=time
-    this.opacity=127
+    this.opacity=10
   }
 
   show() {
