@@ -433,10 +433,10 @@ function createSliders() {
   slider_critical_distance = createSlider(10, 100, 30, 10);
   slider_prob_inf = createSlider(0.1, 1, 0.1, 0.1);
 
-  slider_max_n.position(140, y_location);
-  slider_speed.position(280, y_location);
-  slider_critical_distance.position(400, y_location);
-  slider_prob_inf.position(540, y_location);
+  slider_max_n.position(140, y_location+5);
+  slider_speed.position(280, y_location+5);
+  slider_critical_distance.position(400, y_location+5);
+  slider_prob_inf.position(540, y_location+5);
 
 
   slider_max_n.style('width', '80px');
@@ -446,7 +446,7 @@ function createSliders() {
 }
 
 function drawSliderLabels() {
-  y_location_corr=y_location-50;
+  y_location_corr=y_location-55;
   fill(0);
   text("N", 130, y_location_corr);
   text("Speed", 230, y_location_corr);
