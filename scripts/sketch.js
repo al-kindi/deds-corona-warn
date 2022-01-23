@@ -17,8 +17,9 @@ var slider_max_n;
 var slider_speed;
 var slider_critical_distance;
 var slider_prob_inf;
-var button_use_app;
+var button_pause;
 var simulation_running=true;
+var button_app;
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -31,7 +32,7 @@ const PERSON_SIZE = 5;
 const PROB_PATH_DERIVATION = 0.05
 var CRITICAL_DISTANCE = 20
 const POPUP_DISPLAY_DURATION = 200;
-const USE_APP = true;
+var USE_APP = true;
 var SELECTED_PERSON = null;
 var PROB_INFECTION = 0.1;
 
@@ -104,6 +105,7 @@ function setup() {
 
   createSliders();
   createStatusButton();
+  createAppButton();
 
   // Dynamically update HTML elements with JS variables
   // document.getElementById("heading").innerHTML = "Subtitle changed...";
@@ -119,7 +121,7 @@ function draw() {
   background(220);
 
   updateConstantsFromSliders();
-  //button_use_app.mouseClicked(changeSimulationStatus());
+  //button_pause.mouseClicked(changeSimulationStatus());
 
   if (simulation_running){
     sim.update();
@@ -131,7 +133,8 @@ function draw() {
   app.draw();
   serverDisplay.draw();
   settingDisplay.draw();
-  button_use_app.draw();
+  button_pause.draw();
+  button_app.draw();
   drawSliderLabels();
 }
 
@@ -461,38 +464,52 @@ function updateConstantsFromSliders() {
 }
 
 function createStatusButton(){
-  button_use_app=new Clickable();
-  //button_use_app.locate(30,y_location-65);
-  //button_use_app.resize(20,60);
-  button_use_app.locate(30,y_location-69);
-  button_use_app.resize(28,28);
-  button_use_app.text="";
-  button_use_app.textSize=14;
-  button_use_app.stroke="#FFFFFF";
-  let start_button=loadImage("./images/start_button.png");
-  let pause_button=loadImage("./images/pause_button.png");
+  button_pause=new Clickable();
+  button_pause.locate(25,y_location-65);
+  button_pause.resize(30,20);
+  //button_pause.locate(30,y_location-69);
+  //button_pause.resize(28,28);
+  //button_pause.textScaled=true;
+  button_pause.textSize=16;
+  //button_pause.stroke="#FFFFFF";
+  //let start_button=loadImage("./images/start_button.png");
+  //let pause_button=loadImage("./images/pause_button.png");
 
-  button_use_app.image=pause_button;
+  //button_pause.image=pause_button;
 
-  //button_use_app.text="Stop!";
+  button_pause.text="||";
 
-  button_use_app.onPress = function(){
+  button_pause.onPress = function(){
     if (simulation_running){
-      //button_use_app.text="Start!";
-      button_use_app.image=start_button;
+      button_pause.text="|>";
+      //button_pause.image=start_button;
     } else{
-      //button_use_app.text="Stop!";
-      button_use_app.image=pause_button;
+      button_pause.text="||";
+      //button_pause.image=pause_button;
     }
     simulation_running= !simulation_running;
   }
 }
 
+function createAppButton(){
+  button_app=new Clickable();
+  button_app.locate(75,y_location-65);
+  button_app.resize(30,20);
+  button_app.textSize=16;
+  button_app.text="On";
+  button_app.color="#008000";
 
-function changeSimulationStatus(){
-  simulation_running= !simulation_running;
+  button_app.onPress = function(){
+    if (USE_APP){
+      button_app.color="#FF0000"
+      button_app.text="Off";
+    } else{
+      button_app.text="On";
+      button_app.color="#008000";
+    }
+    USE_APP= !USE_APP;
+  }
 }
-
 
 class Element {
   constructor(offset_x, offset_y, size_x, size_y) {
