@@ -518,6 +518,7 @@ class Element {
     this.size_x = size_x;
     this.size_y = size_y;
     this.corner_radius = CORNER_RADIUS;
+    this.shadowBlur = 10
   }
   
   draw() {
@@ -525,7 +526,7 @@ class Element {
     translate(this.offset_x, this.offset_y);
     
     // For shaddows
-    drawingContext.shadowBlur = 10;
+    drawingContext.shadowBlur = this.shadowBlur;
     drawingContext.shadowColor = color(0);
     
     noStroke();
@@ -540,6 +541,7 @@ class TextElement extends Element {
     this.title = title;
     this.subtitle = subtitle;
     this.color = color;
+    this.shadowBlur = 10;
   }
   
   draw() {
@@ -575,10 +577,10 @@ class SimulationDisplay extends TextElement {
     translate(sim_offset_x, sim_offset_y);
     
     // For shaddows
-    drawingContext.shadowBlur = 5;
+    drawingContext.shadowBlur = 0;
     drawingContext.shadowColor = color(0);
-    drawingContext.shadowOffsetY = 5;
-    drawingContext.shadowOffsetX = -5;
+    drawingContext.shadowOffsetY = 0;
+    drawingContext.shadowOffsetX = 0;
     
     stroke("black");
     // Draw Text boxes
