@@ -16,7 +16,8 @@ var serverDisplay;
 var slider_max_n;
 var slider_speed;
 var slider_critical_distance;
-var button_use_app; //TODO
+var button_use_app;
+var simulation_running=true;
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -34,20 +35,20 @@ var SELECTED_PERSON = null;
 var PROB_INFECTION = 0.1;
 
 // Global vars for app/display size
-var app_height = 280;
-var setting_height = 30;
+const app_height = 280;
+const setting_height = 30;
 
 // Global vars for boundaries of simulation
-var sim_offset_x = 10;
-var sim_offset_y = 20;
-var sim_size_x = 3/5 * WIDTH - 20;
-var sim_size_y = HEIGHT - 2*20 - setting_height;
+const sim_offset_x = 10;
+const sim_offset_y = 20;
+const sim_size_x = 3/5 * WIDTH - 20;
+const sim_size_y = HEIGHT - 2*20 - setting_height;
 
 // Global vars for position of slide description
-var y_location = sim_offset_y+sim_size_y+15+setting_height/2;
+const y_location = sim_offset_y+sim_size_y+15+setting_height/2+50;
 
 //global vars for server height
-var server_height = sim_size_y-app_height-sim_offset_y+10;
+const server_height = sim_size_y-app_height-sim_offset_y+10;
 
 // Global vars for textblock size
 const ownIDHeight = 65;
@@ -100,9 +101,9 @@ function setup() {
       width-sim_offset_y,
       setting_height);
 
-
   createSliders();
-  
+  createStatusButton();
+
   // Dynamically update HTML elements with JS variables
   // document.getElementById("heading").innerHTML = "Subtitle changed...";
   // document.getElementById("name").innerHTML = "John Doe";
@@ -117,8 +118,11 @@ function draw() {
   background(220);
 
   updateConstantsFromSliders();
-      
-  sim.update();
+  //button_use_app.mouseClicked(changeSimulationStatus());
+
+  if (simulation_running){
+    sim.update();
+  }
   serverDisplay.update();
   app.update();
 
@@ -126,6 +130,7 @@ function draw() {
   app.draw();
   serverDisplay.draw();
   settingDisplay.draw();
+  button_use_app.draw();
   drawSliderLabels();
 }
 
@@ -421,9 +426,9 @@ function createSliders() {
   slider_speed = createSlider(0.5, 5, 1, 0.5);
   slider_critical_distance = createSlider(10, 100, 30, 10);
   
-  slider_max_n.position(40, y_location);
-  slider_speed.position(180, y_location);
-  slider_critical_distance.position(300, y_location);
+  slider_max_n.position(140, y_location);
+  slider_speed.position(280, y_location);
+  slider_critical_distance.position(400, y_location);
 
   slider_max_n.style('width', '80px');
   slider_speed.style('width', '80px');
@@ -431,10 +436,11 @@ function createSliders() {
 }
 
 function drawSliderLabels() {
+  y_location_corr=y_location-50;
   fill(0);
-  text("N", 30, y_location-2);
-  text("Speed", 130, y_location-2);
-  text("Dist", 270, y_location-2);
+  text("N", 130, y_location_corr);
+  text("Speed", 230, y_location_corr);
+  text("Dist", 370, y_location_corr);
 }
 
 function updateConstantsFromSliders() {
@@ -443,6 +449,39 @@ function updateConstantsFromSliders() {
   CRITICAL_DISTANCE = slider_critical_distance.value();
 
   MIN_N = 0.6 * MAX_N;
+}
+
+function createStatusButton(){
+  button_use_app=new Clickable();
+  //button_use_app.locate(30,y_location-65);
+  //button_use_app.resize(20,60);
+  button_use_app.locate(30,y_location-69);
+  button_use_app.resize(28,28);
+  button_use_app.text="";
+  button_use_app.textSize=14;
+  button_use_app.stroke="#FFFFFF";
+  let start_button=loadImage("./images/start_button.png");
+  let pause_button=loadImage("./images/pause_button.png");
+
+  button_use_app.image=pause_button;
+
+  //button_use_app.text="Stop!";
+
+  button_use_app.onPress = function(){
+    if (simulation_running){
+      //button_use_app.text="Start!";
+      button_use_app.image=start_button;
+    } else{
+      //button_use_app.text="Stop!";
+      button_use_app.image=pause_button;
+    }
+    simulation_running= !simulation_running;
+  }
+}
+
+
+function changeSimulationStatus(){
+  simulation_running= !simulation_running;
 }
 
 
