@@ -701,7 +701,11 @@ class ServerDisplay extends TextBlockList {
 
   update() {
     let ids = "";
-    for (let i=0; i<rki_infected_ids.length; i++) {
+    let loop_length=55;
+    if (rki_infected_ids.length < loop_length){
+      loop_length = rki_infected_ids.length;
+    }
+    for (let i=0; i<loop_length; i++) {
       ids += rki_infected_ids[i] + " • ";
       if (i%8 == 7) {
         ids += "\n";
